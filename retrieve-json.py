@@ -31,6 +31,7 @@ def get_data(host,port):
     query=pycurl.Curl()
     query.setopt(pycurl.URL,urlstr)
     query.setopt(pycurl.WRITEFUNCTION, buffer.write)
+    query.setopt(pycurl.CONNECTTIMEOUT, 2)
     query.perform()
     query.close()
     querydata=json.loads(buffer.getvalue())
@@ -53,21 +54,27 @@ while True:
     miners=get_miners()
     minerdata=[]
     for miner in miners:
-        minerdata.append("Name: "+get_data(miner[1],miner[2])["Devices"][0]["GPU 0"]["Name"])
-        minerdata.append("Temperature(C): "+str(get_data(miner[1],miner[2])["Devices"][0]["GPU 0"]["Temperature"]))
-        for entries in get_data(miner[1],miner[2])["Devices"][0]["GPU 0"]:
-            try:
-                if "Power" in entries:
-                    minerdata.append("Watts: "+str(get_data(miner[1],miner[2])["Devices"][0]["GPU 0"]["Power"]))
-            except KeyError:
-                    minerdata.append("Watts: Cannot Retrieve")
-        minerdata.append("Accepted Shares: "+str(get_data(miner[1],miner[2])["Algorithms"][0]["Kawpow"]["Total"]["Accepted"]))
-        minerdata.append("Hashrate: "+str(get_data(miner[1],miner[2])["Algorithms"][0]["Kawpow"]["Total"]["Hashrate"]))
-        minerdata.append("-----------------------------------------")
+        try:
+            minerdata.append("Name: "+get_data(miner[1],miner[2])["Devices"][0]["GPU 0"]["Name"])
+            minerdata.append("Temperature(C): "+str(get_data(miner[1],miner[2])["Devices"][0]["GPU 0"]["Temperature"]))
+            for entries in get_data(miner[1],miner[2])["Devices"][0]["GPU 0"]:
+                try:
+                    if "Power" in entries:
+                        minerdata.append("Watts: "+str(get_data(miner[1],miner[2])["Devices"][0]["GPU 0"]["Power"]))
+                except KeyError:
+                        minerdata.append("Watts: Cannot Retrieve")
+            minerdata.append("Accepted Shares: "+str(get_data(miner[1],miner[2])["Algorithms"][0]["Kawpow"]["Total"]["Accepted"]))
+            minerdata.append("Hashrate: "+str(get_data(miner[1],miner[2])["Algorithms"][0]["Kawpow"]["Total"]["Hashrate"]))
+            minerdata.append("-----------------------------------------")
+        except pycurl.error:
+            continue
+        except KeyError:
+            continue
     text='\n'.join([str(i) for i in minerdata])
     window['-DATA-'].update(text)
     window['-TIME-'].update("Uptime: "+str(n)+" seconds")
     window.Refresh()
     n=n+1
     time.sleep(1)
+
 
